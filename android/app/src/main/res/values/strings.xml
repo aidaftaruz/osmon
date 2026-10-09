@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Osmon</string>
+    <string name="widget_name">Osmon ob-havo</string>
+    <string name="widget_desc">Hozirgi harorat va bugungi prognoz</string>
+</resources>
