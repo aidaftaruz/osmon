@@ -71,6 +71,32 @@ h2{font:600 12px var(--display);text-transform:uppercase;letter-spacing:.08em;co
 .msg{color:var(--muted);padding:24px 4px;text-align:center}
 .foot{color:var(--muted);font-size:12px;text-align:center}
 .foot a{color:inherit}
+.d{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.d:active{background:var(--line)}
+.d:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.sheet{position:fixed;inset:0;z-index:10;background:var(--bg);overflow-y:auto;
+  padding:max(12px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom))}
+.sheet-in{max-width:560px;margin:0 auto;display:grid;gap:14px}
+.sh-top{display:flex;align-items:center;gap:10px;position:sticky;top:0;background:var(--bg);padding-block:6px;z-index:1}
+.back{background:var(--card);border:1px solid var(--line);border-radius:12px;width:40px;height:40px;display:grid;place-items:center;cursor:pointer;flex:none}
+.back:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sh-title{font-weight:700;font-size:17px;line-height:1.2}
+.sh-title small{display:block;color:var(--muted);font-weight:400;font-size:13px}
+.sum{background:var(--card);border-radius:14px;padding:12px 14px;display:grid;gap:4px}
+.sum b{font-size:15px}
+.sum span{color:var(--muted);font-size:13px}
+.sum.wet b{color:var(--cold)}
+.hl{background:var(--card);border-radius:16px;overflow:hidden}
+.hr{display:grid;grid-template-columns:46px 28px minmax(0,1fr) 44px 64px;align-items:center;gap:8px;padding:9px 12px;border-top:1px solid var(--line);font-variant-numeric:tabular-nums;font-size:14px}
+.hr:first-child{border-top:0}
+.hr svg{width:26px;height:26px}
+.hr .tm{color:var(--muted);font-size:13px}
+.hr .ds{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hr .tt{font-weight:700;text-align:right}
+.hr .pr{text-align:right;font-size:12px;color:var(--muted);line-height:1.25}
+.hr.wet{background:color-mix(in srgb,var(--cold) 12%,transparent)}
+.hr.wet .pr{color:var(--cold);font-weight:600}
+.hr.past{opacity:.45}
 @media (max-width:380px){.temp{font-size:62px}.facts{grid-template-columns:repeat(2,1fr)}}
 @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
 </style>
@@ -87,6 +113,17 @@ h2{font:600 12px var(--display);text-transform:uppercase;letter-spacing:.08em;co
   <section id="app"><p class="msg">Yuklanmoqda...</p></section>
   <p class="foot">Ma'lumot: <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a>. Reklamasiz.</p>
 </main>
+<div id="sheet" class="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sh-title">
+  <div class="sheet-in">
+    <div class="sh-top">
+      <button class="back" id="back" type="button" aria-label="Orqaga">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg>
+      </button>
+      <div class="sh-title" id="sh-title"></div>
+    </div>
+    <div id="sh-body"></div>
+  </div>
+</div>
 
 <script>
 const $ = s => document.querySelector(s);
@@ -136,7 +173,7 @@ async function getWeather(p){
   u.search = new URLSearchParams({
     latitude:p.lat, longitude:p.lon, timezone:"auto", forecast_days:16, wind_speed_unit:"ms",
     current:"temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,surface_pressure,is_day",
-    hourly:"temperature_2m,weather_code,precipitation_probability,is_day",
+    hourly:"temperature_2m,weather_code,precipitation_probability,precipitation,wind_speed_10m,is_day",
     daily:"weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset"
   });
   const res = await fetch(u);
@@ -144,7 +181,67 @@ async function getWeather(p){
   return res.json();
 }
 
+let CUR = null;
+
+// ---- kun ichiga kirish: soatma-soat ----
+function rainSpans(idx, d){
+  const spans = []; let s = null;
+  idx.forEach((i,k) => {
+    const wet = d.hourly.precipitation_probability[i] >= 40 || d.hourly.precipitation[i] >= 0.1;
+    if(wet && s===null) s = i;
+    if((!wet || k===idx.length-1) && s!==null){ spans.push([s, wet ? i : idx[k-1]]); s = null; }
+  });
+  return spans;
+}
+function openDay(i){
+  if(!CUR) return;
+  const {p, d} = CUR;
+  const day = d.daily.time[i], dt = new Date(day+"T12:00");
+  const idx = d.hourly.time.map((t,k) => t.startsWith(day) ? k : -1).filter(k => k>=0);
+  const nowKey = d.current.time.slice(0,13);
+  const name = i===0 ? "Bugun" : i===1 ? "Ertaga" : W[dt.getDay()];
+  $("#sh-title").innerHTML = `${name}, ${dt.getDate()} ${M[dt.getMonth()]}<small>${p.name}${i>=7?" · taxminiy prognoz":""}</small>`;
+
+  const spans = rainSpans(idx, d);
+  const hh = k => d.hourly.time[k].slice(11,16);
+  const end = k => { const h = (+d.hourly.time[k].slice(11,13)+1)%24; return String(h).padStart(2,"0")+":00"; };
+  const total = idx.reduce((a,k) => a + (d.hourly.precipitation[k]||0), 0);
+  let sum;
+  if(spans.length){
+    sum = `<div class="sum wet"><b>Yog'ingarchilik: ${spans.map(([a,b]) => `${hh(a)}–${end(b)}`).join(", ")}</b>
+      <span>Kun bo'yi jami ${total.toFixed(1)} mm · eng yuqori ehtimol ${d.daily.precipitation_probability_max[i]}%</span></div>`;
+  } else {
+    sum = `<div class="sum"><b>Yog'ingarchilik kutilmaydi</b><span>${sign(d.daily.temperature_2m_min[i])} dan ${sign(d.daily.temperature_2m_max[i])} gacha</span></div>`;
+  }
+
+  const rows = idx.map(k => {
+    const [ds, kind] = codeInfo(d.hourly.weather_code[k]);
+    const pp = d.hourly.precipitation_probability[k], mm = d.hourly.precipitation[k];
+    const wet = pp >= 40 || mm >= 0.1;
+    const past = i===0 && d.hourly.time[k].slice(0,13) < nowKey;
+    return `<div class="hr${wet?" wet":""}${past?" past":""}">
+      <span class="tm">${hh(k)}</span>${icon(kind, d.hourly.is_day[k]===1)}
+      <span class="ds">${ds} · ${d.hourly.wind_speed_10m[k].toFixed(0)} m/s</span>
+      <span class="tt">${sign(d.hourly.temperature_2m[k])}</span>
+      <span class="pr">${pp}%${mm>=0.1?`<br>${mm.toFixed(1)} mm`:""}</span></div>`;
+  }).join("");
+
+  $("#sh-body").innerHTML = sum + `<div class="hl" style="margin-top:14px">${rows}</div>`;
+  const sh = $("#sheet");
+  if(sh.hidden){ sh.hidden = false; history.pushState({day:i}, ""); }
+  sh.scrollTop = 0;
+  // bugun bo'lsa hozirgi soatga suriladi
+  if(i===0){ const first = sh.querySelector(".hr:not(.past)"); if(first) first.scrollIntoView({block:"center"}); }
+  $("#back").focus({preventScroll:true});
+}
+function closeDay(){ $("#sheet").hidden = true; }
+$("#back").addEventListener("click", () => history.state && history.state.day!==undefined ? history.back() : closeDay());
+addEventListener("popstate", closeDay);
+$("#app").addEventListener("click", e => { const r = e.target.closest("[data-day]"); if(r) openDay(+r.dataset.day); });
+$("#app").addEventListener("keydown", e => { const r = e.target.closest("[data-day]"); if(r && (e.key==="Enter"||e.key===" ")){ e.preventDefault(); openDay(+r.dataset.day); } });
+
 function render(p, d){
+  CUR = {p, d};
   const c = d.current, now = new Date(c.time);
   const [desc, kind] = codeInfo(c.weather_code);
   const mmHg = r(c.surface_pressure*0.750062);
@@ -169,7 +266,7 @@ function render(p, d){
     const name = i===0 ? "Bugun" : i===1 ? "Ertaga" : WS[dt.getDay()];
     const pp = d.daily.precipitation_probability_max[i];
     const left = (mins[i]-lo)/span*100, width = (maxs[i]-mins[i])/span*100;
-    days += `<div class="d${i>=7?" far":""}" title="${dd}">
+    days += `<div class="d${i>=7?" far":""}" data-day="${i}" role="button" tabindex="0" aria-label="${name}, ${dd}. Soatma-soat ko'rish">
       <div class="dn">${name}<small>${dt.getDate()} ${M[dt.getMonth()].slice(0,3)}</small></div>
       ${icon(k)}
       <div class="dp">${pp>=20?pp+"%":""}</div>
@@ -200,12 +297,12 @@ function render(p, d){
 async function show(p){
   save("place", p);
   $("#res").hidden = true;
-  const cached = load("wx");
+  const cached = load("wx2");
   if(cached && cached.lat===p.lat && cached.lon===p.lon) render(p, cached.data);
   else $("#app").innerHTML = '<p class="msg">Yuklanmoqda...</p>';
   try{
     const data = await getWeather(p);
-    save("wx", {lat:p.lat, lon:p.lon, data});
+    save("wx2", {lat:p.lat, lon:p.lon, data});
     render(p, data);
   }catch(e){
     if(!cached) $("#app").innerHTML = '<p class="msg">Internetga ulanib bo\'lmadi. Ulanishni tekshirib, sahifani yangilang.</p>';
@@ -237,13 +334,34 @@ $("#q").addEventListener("input", e => {
   }, 350);
 });
 
+// koordinatadan joy nomi
+async function placeName(lat, lon){
+  try{
+    const j = await (await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=uz`)).json();
+    const name = j.city || j.locality;
+    if(name) return {name, admin: j.principalSubdivision || ""};
+  }catch(e){}
+  try{
+    const j = await (await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=12&accept-language=uz,ru&lat=${lat}&lon=${lon}`)).json();
+    const a = j.address || {};
+    const name = a.city || a.town || a.village || a.county || a.state;
+    if(name) return {name, admin: a.state && a.state!==name ? a.state : ""};
+  }catch(e){}
+  return {name: `${lat.toFixed(2)}, ${lon.toFixed(2)}`, admin: ""};
+}
+
 // joylashuv
 $("#loc").addEventListener("click", () => {
   if(!navigator.geolocation) return;
+  $("#app").innerHTML = '<p class="msg">Joylashuv aniqlanmoqda...</p>';
   navigator.geolocation.getCurrentPosition(async pos => {
     const lat = +pos.coords.latitude.toFixed(4), lon = +pos.coords.longitude.toFixed(4);
-    show({name:"Mening joyim", admin:"", lat, lon});
-  }, () => { $("#q").focus(); }, {timeout:10000});
+    const place = await placeName(lat, lon);
+    show({name: place.name || "Mening joyim", admin: place.admin || "", lat, lon});
+  }, () => {
+    $("#app").innerHTML = '<p class="msg">Joylashuvga ruxsat berilmadi. Telefon sozlamalarida brauzerga joylashuv ruxsatini yoqing yoki shaharni qidiring.</p>';
+    $("#q").focus();
+  }, {timeout:15000, enableHighAccuracy:false, maximumAge:600000});
 });
 
 show(load("place") || DEFAULT);
