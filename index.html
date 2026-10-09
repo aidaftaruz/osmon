@@ -42,6 +42,7 @@ button,input{font:inherit;color:inherit}
 .big{display:flex;align-items:center;gap:12px;margin-top:8px}
 .temp{font:600 76px/1 var(--display);letter-spacing:-.04em}
 .big svg{width:64px;height:64px;flex:none}
+.big>div{min-width:0;flex:1}
 .desc{font-weight:600;font-size:17px}
 .facts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}
 .facts div{background:var(--card);border-radius:12px;padding:8px 10px}
@@ -71,6 +72,46 @@ h2{font:600 12px var(--display);text-transform:uppercase;letter-spacing:.08em;co
 .msg{color:var(--muted);padding:24px 4px;text-align:center}
 .foot{color:var(--muted);font-size:12px;text-align:center}
 .foot a{color:inherit}
+/* jonli fon */
+:root{--sky-day:rgba(120,180,225,.35);--sky-grey:rgba(120,135,150,.35);--sky-night:rgba(20,40,80,.35);--sun-glow:rgba(255,190,110,.45);--cloud:#ffffff;--snow:#ffffff}
+@media (prefers-color-scheme:dark){:root{--sky-day:rgba(70,130,190,.35);--sky-grey:rgba(90,105,120,.4);--sky-night:rgba(40,70,140,.35);--sun-glow:rgba(255,170,90,.3);--cloud:#c9d6e0;--snow:#e8f0f6}}
+.now{position:relative;overflow:hidden;background:var(--card);border-radius:20px;padding:16px 16px 14px!important;isolation:isolate}
+#sky{position:absolute;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none}
+.facts div{background:color-mix(in srgb,var(--card) 80%,transparent);backdrop-filter:blur(4px)}
+.facts{gap:6px!important}
+.mini{display:block;height:20px;width:auto;margin-bottom:4px;overflow:visible}
+.wind path{fill:none;stroke:var(--cold);stroke-width:2;stroke-linecap:round;stroke-dasharray:6 4;animation:flow var(--dur) linear infinite}
+.wind .w2{animation-duration:calc(var(--dur)*1.3)}.wind .w3{animation-duration:calc(var(--dur)*.8)}
+@keyframes flow{to{stroke-dashoffset:-20}}
+.hum .dropo{fill:none;stroke:var(--cold);stroke-width:1.5}
+.hum .wave{fill:var(--cold);opacity:.7;animation:wave 2.4s linear infinite}
+@keyframes wave{to{transform:translateX(10px)}}
+.pres .arc,.sunarc .arc{fill:none;stroke:var(--line);stroke-width:3;stroke-linecap:round}
+.pres .needle path{stroke:var(--accent);stroke-width:2;stroke-linecap:round}
+.pres .needle circle{fill:var(--accent)}
+@keyframes jitter{0%,100%{transform:rotate(var(--a))}30%{transform:rotate(calc(var(--a) + 5deg))}65%{transform:rotate(calc(var(--a) - 4deg))}}
+.sunarc .dashed{stroke-dasharray:2 3;stroke-width:1.5}
+.sunarc .ground{stroke:var(--muted);stroke-width:1}
+.sunarc .sdot{fill:var(--accent);animation:pulse 2.5s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+.sunarc .mdot{fill:var(--muted)}
+@keyframes pulse{50%{transform:scale(1.25)}}
+/* jonli ikonkalar */
+.wi .ray{transform-box:fill-box;transform-origin:center;animation:spin 14s linear infinite}
+.wi .core{transform-box:fill-box;transform-origin:center;animation:pulse 3s ease-in-out infinite}
+.wi .moon{transform-box:fill-box;transform-origin:center;animation:rock 6s ease-in-out infinite}
+.wi .cl{animation:drift 5s ease-in-out infinite alternate}
+.wi .rn{animation:drop 1s linear infinite}.wi .r2{animation-delay:-.35s}.wi .r3{animation-delay:-.7s}
+.wi .sn{animation:flake 2.6s linear infinite}.wi .s2{animation-delay:-.9s}.wi .s3{animation-delay:-1.7s}
+.wi .bolt{animation:flash 2.2s steps(1) infinite}
+.wi .fg{animation:slide 3s ease-in-out infinite alternate}.wi .f2{animation-delay:-1.5s}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes rock{50%{transform:rotate(-10deg)}}
+@keyframes drift{from{transform:translateX(-1px)}to{transform:translateX(1.5px)}}
+@keyframes drop{0%{transform:translateY(-1px);opacity:0}20%{opacity:1}100%{transform:translateY(4px);opacity:0}}
+@keyframes flake{0%{transform:translate(0,-1px);opacity:0}25%{opacity:1}60%{transform:translate(1px,2px)}100%{transform:translate(-1px,4px);opacity:0}}
+@keyframes flash{0%,100%{opacity:1}40%{opacity:.25}45%{opacity:1}50%{opacity:.3}}
+@keyframes slide{to{transform:translateX(2px)}}
+@media (prefers-reduced-motion:reduce){.wi *,.mini *{animation:none!important}}
 .d{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .d:active{background:var(--line)}
 .d:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
@@ -91,7 +132,8 @@ h2{font:600 12px var(--display);text-transform:uppercase;letter-spacing:.08em;co
 .hr:first-child{border-top:0}
 .hr svg{width:26px;height:26px}
 .hr .tm{color:var(--muted);font-size:13px}
-.hr .ds{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hr .ds{font-size:13px;line-height:1.25}
+.hr .ds small{display:block;color:var(--muted);font-size:11px}
 .hr .tt{font-weight:700;text-align:right}
 .hr .pr{text-align:right;font-size:12px;color:var(--muted);line-height:1.25}
 .hr.wet{background:color-mix(in srgb,var(--cold) 12%,transparent)}
@@ -148,19 +190,138 @@ function codeInfo(c){
 }
 function icon(kind, day=true){
   const sun = day
-    ? '<circle cx="12" cy="12" r="4.5" fill="var(--accent)"/><g stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round"><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></g>'
-    : '<path d="M15 3.5a8.5 8.5 0 1 0 5.5 13A7 7 0 0 1 15 3.5z" fill="var(--muted)"/>';
-  const cl = (x=0,y=0,f="var(--muted)") => `<path transform="translate(${x} ${y})" d="M7 18h10a4 4 0 0 0 .4-8A5.5 5.5 0 0 0 6.8 11 3.5 3.5 0 0 0 7 18z" fill="${f}"/>`;
+    ? '<circle class="core" cx="12" cy="12" r="4.5" fill="var(--accent)"/><g class="ray" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round"><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></g>'
+    : '<path class="moon" d="M15 3.5a8.5 8.5 0 1 0 5.5 13A7 7 0 0 1 15 3.5z" fill="var(--muted)"/>';
+  const cl = (x=0,y=0,f="var(--muted)") => `<g transform="translate(${x} ${y})"><path class="cl" d="M7 18h10a4 4 0 0 0 .4-8A5.5 5.5 0 0 0 6.8 11 3.5 3.5 0 0 0 7 18z" fill="${f}"/></g>`;
   const body = {
     sun: sun,
     part: `<g transform="translate(-3 -3) scale(.8)">${sun}</g>${cl(2,2)}`,
     cloud: cl(0,0),
-    fog: cl(0,-3)+'<g stroke="var(--muted)" stroke-width="1.8" stroke-linecap="round"><path d="M5 19h14M7 22h10"/></g>',
-    rain: cl(0,-3)+'<g stroke="var(--cold)" stroke-width="1.8" stroke-linecap="round"><path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3"/></g>',
-    snow: cl(0,-3)+'<g fill="var(--cold)"><circle cx="8" cy="19.5" r="1.3"/><circle cx="12" cy="21" r="1.3"/><circle cx="16" cy="19.5" r="1.3"/></g>',
-    storm: cl(0,-3)+'<path d="M12.5 15l-3 4.5h2.5l-1.5 4 4-5.5h-2.5l1.5-3z" fill="var(--accent)"/>'
+    fog: cl(0,-3)+'<g stroke="var(--muted)" stroke-width="1.8" stroke-linecap="round"><path class="fg" d="M5 19h14"/><path class="fg f2" d="M7 22h10"/></g>',
+    rain: cl(0,-3)+'<g stroke="var(--cold)" stroke-width="1.8" stroke-linecap="round"><path class="rn" d="M8 17l-1 3"/><path class="rn r2" d="M12 17l-1 3"/><path class="rn r3" d="M16 17l-1 3"/></g>',
+    snow: cl(0,-3)+'<g fill="var(--cold)"><circle class="sn" cx="8" cy="18.5" r="1.3"/><circle class="sn s2" cx="12" cy="19.5" r="1.3"/><circle class="sn s3" cx="16" cy="18.5" r="1.3"/></g>',
+    storm: cl(0,-3)+'<path class="bolt" d="M12.5 15l-3 4.5h2.5l-1.5 4 4-5.5h-2.5l1.5-3z" fill="var(--accent)"/>'
   }[kind];
-  return `<svg viewBox="0 0 24 24" aria-hidden="true">${body}</svg>`;
+  return `<svg class="wi" viewBox="0 0 24 24" aria-hidden="true">${body}</svg>`;
+}
+
+// ---- jonli fon: yomg'ir, qor, bulut, quyosh, yulduz, tuman, chaqmoq ----
+const SCENE = {kind:"sun", day:true, wind:2, clouds:0, rain:0, t0:performance.now(), parts:[], cl:[], stars:[], flash:0};
+function setScene(kind, day, wind, cover, precip){
+  const S = SCENE;
+  S.kind = kind; S.day = day; S.wind = wind;
+  S.clouds = kind==="sun" ? Math.round(cover/34) : kind==="part" ? 3 : 5;
+  S.rain = kind==="rain" ? Math.min(220, 70 + precip*60) : kind==="storm" ? 220 : kind==="snow" ? 90 : 0;
+  S.parts = []; S.cl = []; S.stars = [];
+  for(let i=0;i<S.clouds;i++) S.cl.push({x:Math.random(), y:.08+Math.random()*.35, s:.6+Math.random()*.7, a:.35+Math.random()*.35});
+  for(let i=0;i<40;i++) S.stars.push({x:Math.random(), y:Math.random()*.6, r:Math.random()*1.2+.3, p:Math.random()*6});
+}
+let sceneLast = performance.now();
+function sceneFrame(ts){
+  requestAnimationFrame(sceneFrame);
+  const cv = document.getElementById("sky");
+  if(!cv || document.hidden) { sceneLast = ts; return; }
+  const dt = Math.min((ts - sceneLast)/1000, .1); sceneLast = ts;
+  const S = SCENE, dpr = Math.min(devicePixelRatio||1, 2);
+  const w = cv.clientWidth, h = cv.clientHeight;
+  if(cv.width !== Math.round(w*dpr) || cv.height !== Math.round(h*dpr)){ cv.width = w*dpr; cv.height = h*dpr; }
+  const g = cv.getContext("2d"); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,w,h);
+  const css = getComputedStyle(cv), col = n => css.getPropertyValue(n).trim();
+  const t = ts/1000, still = REDUCE;
+
+  // osmon rangi
+  const sky = g.createLinearGradient(0,0,0,h);
+  const dark = S.kind==="rain"||S.kind==="storm"||S.kind==="snow"||S.kind==="fog"||S.kind==="cloud";
+  sky.addColorStop(0, S.day ? (dark ? col("--sky-grey") : col("--sky-day")) : col("--sky-night"));
+  sky.addColorStop(1, "transparent");
+  g.fillStyle = sky; g.fillRect(0,0,w,h);
+
+  // yulduzlar va oy
+  if(!S.day && S.clouds < 4){
+    S.stars.forEach(s => { g.globalAlpha = .35 + .45*Math.abs(Math.sin(t*1.3 + s.p)); g.fillStyle = col("--fg");
+      g.beginPath(); g.arc(s.x*w, s.y*h, s.r, 0, 6.283); g.fill(); });
+    g.globalAlpha = 1;
+  }
+  // quyosh nurlari
+  if(S.day && (S.kind==="sun"||S.kind==="part")){
+    const sx = w - 56, sy = 50, pulse = still ? 0 : Math.sin(t*1.2)*4;
+    const glow = g.createRadialGradient(sx,sy,0,sx,sy,120+pulse*3);
+    glow.addColorStop(0, col("--sun-glow")); glow.addColorStop(1,"transparent");
+    g.fillStyle = glow; g.fillRect(0,0,w,h);
+    g.save(); g.translate(sx,sy); g.rotate(still ? 0 : t*.15);
+    g.strokeStyle = col("--accent"); g.globalAlpha = .35; g.lineWidth = 2; g.lineCap = "round";
+    for(let i=0;i<12;i++){ g.rotate(Math.PI/6); g.beginPath(); g.moveTo(34+pulse,0); g.lineTo(50+pulse,0); g.stroke(); }
+    g.globalAlpha = 1; g.fillStyle = col("--accent"); g.beginPath(); g.arc(0,0,24,0,6.283); g.fill(); g.restore();
+  }
+  // bulutlar — shamol tezligiga qarab suzadi
+  const speed = still ? 0 : (6 + S.wind*7);
+  S.cl.forEach(c => {
+    c.x += speed*dt/w*(.6 + c.s*.5);
+    if(c.x > 1.25) { c.x = -.3; c.y = .08 + Math.random()*.35; }
+    const x = c.x*w, y = c.y*h, r = 26*c.s;
+    g.fillStyle = col("--cloud"); g.globalAlpha = c.a;
+    g.beginPath();
+    g.arc(x, y, r, 0, 6.283); g.arc(x + r*1.1, y + r*.15, r*.8, 0, 6.283);
+    g.arc(x - r*1.05, y + r*.25, r*.7, 0, 6.283); g.arc(x + r*.3, y - r*.55, r*.75, 0, 6.283);
+    g.fill(); g.globalAlpha = 1;
+  });
+  // tuman qatlamlari
+  if(S.kind==="fog"){
+    for(let i=0;i<4;i++){
+      const y = h*(.35 + i*.17), off = still ? 0 : Math.sin(t*.3 + i)*40;
+      const fg = g.createLinearGradient(0,y-20,0,y+20); fg.addColorStop(0,"transparent"); fg.addColorStop(.5,col("--cloud")); fg.addColorStop(1,"transparent");
+      g.globalAlpha = .45; g.fillStyle = fg; g.fillRect(off-60, y-20, w+120, 40);
+    }
+    g.globalAlpha = 1;
+  }
+  // yomg'ir / qor
+  if(S.rain && !still){
+    const snow = S.kind==="snow", slant = Math.min(S.wind*12, 120);
+    while(S.parts.length < S.rain) S.parts.push({x:Math.random()*(w+slant)-slant, y:Math.random()*-h, v:snow ? 30+Math.random()*30 : 380+Math.random()*220, l:8+Math.random()*10, p:Math.random()*6});
+    g.strokeStyle = col("--cold"); g.fillStyle = col("--snow"); g.lineWidth = 1.3; g.lineCap = "round";
+    S.parts.forEach(p => {
+      p.y += p.v*dt; p.x += (snow ? Math.sin(t + p.p)*20 + slant*.3 : slant*.25)*dt*(snow?1:4)/4;
+      if(p.y > h){ p.y = -10 - Math.random()*40; p.x = Math.random()*(w+slant)-slant; }
+      if(snow){ g.globalAlpha = .85; g.beginPath(); g.arc(p.x, p.y, 1.6 + (p.l%3)*.5, 0, 6.283); g.fill(); }
+      else { g.globalAlpha = .55; const dx = slant/400*p.l; g.beginPath(); g.moveTo(p.x, p.y); g.lineTo(p.x + dx, p.y + p.l); g.stroke(); }
+    });
+    g.globalAlpha = 1;
+  }
+  // chaqmoq
+  if(S.kind==="storm" && !still){
+    if(S.flash <= 0 && Math.random() < .004) S.flash = .35;
+    if(S.flash > 0){ g.fillStyle = `rgba(255,255,255,${S.flash*.8})`; g.fillRect(0,0,w,h); S.flash -= dt; }
+  }
+}
+const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
+requestAnimationFrame(sceneFrame);
+
+// ---- ma'lumot kartochkalari uchun jonli belgilar ----
+function windSvg(ms){
+  const dur = Math.max(.6, 3.2 - ms*.25).toFixed(2);
+  return `<svg class="mini wind" viewBox="0 0 40 20" style="--dur:${dur}s" aria-hidden="true">
+    <path d="M2 6h22a4 4 0 1 0-4-4"/><path class="w2" d="M2 11h30a4 4 0 1 1-4 4"/><path class="w3" d="M2 16h14"/></svg>`;
+}
+function humSvg(p){
+  const y = 19 - 16*p/100;
+  return `<svg class="mini hum" viewBox="0 0 20 22" aria-hidden="true">
+    <defs><clipPath id="dropc"><path d="M10 1.5C6 7 3.5 10.5 3.5 14a6.5 6.5 0 0 0 13 0c0-3.5-2.5-7-6.5-12.5z"/></clipPath></defs>
+    <path d="M10 1.5C6 7 3.5 10.5 3.5 14a6.5 6.5 0 0 0 13 0c0-3.5-2.5-7-6.5-12.5z" class="dropo"/>
+    <g clip-path="url(#dropc)"><path class="wave" d="M-10 ${y} q2.5 -1.5 5 0 t5 0 t5 0 t5 0 t5 0 t5 0 t5 0 t5 0 V24 H-10z"/></g></svg>`;
+}
+function presSvg(mm){
+  const k = Math.max(0, Math.min(1, (mm - 720)/60)), a = -90 + k*180;
+  return `<svg class="mini pres" viewBox="0 0 40 22" aria-hidden="true">
+    <path d="M4 20a16 16 0 0 1 32 0" class="arc"/>
+    <g transform="translate(20 20)"><g class="needle" transform="rotate(${a})">${REDUCE?"":`<animateTransform attributeName="transform" type="rotate" values="${a};${a+5};${a-4};${a}" dur="3s" repeatCount="indefinite"/>`}<path d="M0 0V-13"/><circle r="2"/></g></g></svg>`;
+}
+function daySvg(sr, ss, now, isDay){
+  const toMin = s => +s.slice(0,2)*60 + +s.slice(3,5);
+  const k = Math.max(0, Math.min(1, (toMin(now) - toMin(sr)) / (toMin(ss) - toMin(sr))));
+  const ang = Math.PI*(1-k), x = 20 + 16*Math.cos(ang), y = 20 - 16*Math.sin(ang);
+  return `<svg class="mini sunarc" viewBox="0 0 40 22" aria-hidden="true">
+    <path d="M4 20a16 16 0 0 1 32 0" class="arc dashed"/><path d="M2 20h36" class="ground"/>
+    ${isDay ? `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.2" class="sdot"/>` : `<path d="M22 6a5 5 0 1 0 3 8 4 4 0 0 1-3-8z" class="mdot"/>`}</svg>`;
 }
 const r = n => Math.round(n);
 const sign = n => (r(n)>0?"+":"")+r(n)+"°";
@@ -172,7 +333,7 @@ async function getWeather(p){
   const u = new URL("https://api.open-meteo.com/v1/forecast");
   u.search = new URLSearchParams({
     latitude:p.lat, longitude:p.lon, timezone:"auto", forecast_days:16, wind_speed_unit:"ms",
-    current:"temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,surface_pressure,is_day",
+    current:"temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,surface_pressure,is_day,cloud_cover,precipitation",
     hourly:"temperature_2m,weather_code,precipitation_probability,precipitation,wind_speed_10m,is_day",
     daily:"weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset"
   });
@@ -221,7 +382,7 @@ function openDay(i){
     const past = i===0 && d.hourly.time[k].slice(0,13) < nowKey;
     return `<div class="hr${wet?" wet":""}${past?" past":""}">
       <span class="tm">${hh(k)}</span>${icon(kind, d.hourly.is_day[k]===1)}
-      <span class="ds">${ds} · ${d.hourly.wind_speed_10m[k].toFixed(0)} m/s</span>
+      <span class="ds">${ds}<small>Shamol ${d.hourly.wind_speed_10m[k].toFixed(0)} m/s</small></span>
       <span class="tt">${sign(d.hourly.temperature_2m[k])}</span>
       <span class="pr">${pp}%${mm>=0.1?`<br>${mm.toFixed(1)} mm`:""}</span></div>`;
   }).join("");
@@ -231,7 +392,6 @@ function openDay(i){
   if(sh.hidden){ sh.hidden = false; history.pushState({day:i}, ""); }
   sh.scrollTop = 0;
   // bugun bo'lsa hozirgi soatga suriladi
-  if(i===0){ const first = sh.querySelector(".hr:not(.past)"); if(first) first.scrollIntoView({block:"center"}); }
   $("#back").focus({preventScroll:true});
 }
 function closeDay(){ $("#sheet").hidden = true; }
@@ -277,21 +437,23 @@ function render(p, d){
   const sr = d.daily.sunrise[0].slice(11,16), ss = d.daily.sunset[0].slice(11,16);
   $("#app").innerHTML = `
     <div class="now">
+      <canvas id="sky" aria-hidden="true"></canvas>
       <div class="place">${p.name}${p.admin?", "+p.admin:""}</div>
       <div class="date">${W[now.getDay()]}, ${now.getDate()} ${M[now.getMonth()]} · ${c.time.slice(11,16)} holatiga</div>
       <div class="big"><span class="temp">${sign(c.temperature_2m)}</span>${icon(kind, c.is_day===1)}
         <div><div class="desc">${desc}</div><div class="date">Seziladi ${sign(c.apparent_temperature)} · bugun ${sign(mins[0])}…${sign(maxs[0])}</div></div></div>
       <div class="facts">
-        <div><b>${c.wind_speed_10m.toFixed(1)} m/s</b><span>Shamol</span></div>
-        <div><b>${c.relative_humidity_2m}%</b><span>Namlik</span></div>
-        <div><b>${mmHg}</b><span>Bosim, mm</span></div>
-        <div><b>${sr}–${ss}</b><span>Kun</span></div>
+        <div>${windSvg(c.wind_speed_10m)}<b>${c.wind_speed_10m.toFixed(1)} m/s</b><span>Shamol</span></div>
+        <div>${humSvg(c.relative_humidity_2m)}<b>${c.relative_humidity_2m}%</b><span>Namlik</span></div>
+        <div>${presSvg(mmHg)}<b>${mmHg}</b><span>Bosim, mm</span></div>
+        <div>${daySvg(sr, ss, c.time.slice(11,16), c.is_day===1)}<b>${sr}–${ss}</b><span>Kun</span></div>
       </div>
     </div>
     <h2>24 soat</h2>
     <div class="hours">${hours}</div>
     <h2>16 kun</h2>
     <div class="days">${days}</div>`;
+  setScene(kind, c.is_day===1, c.wind_speed_10m, c.cloud_cover ?? 50, c.precipitation ?? 0);
 }
 
 async function show(p){
