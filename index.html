@@ -458,6 +458,7 @@ function render(p, d){
 
 async function show(p){
   save("place", p);
+  try{ if(window.OsmonApp) OsmonApp.setPlace(p.name, p.lat, p.lon); }catch(e){}
   $("#res").hidden = true;
   const cached = load("wx2");
   if(cached && cached.lat===p.lat && cached.lon===p.lon) render(p, cached.data);
